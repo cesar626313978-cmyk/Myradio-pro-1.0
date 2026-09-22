@@ -270,15 +270,19 @@ export default function App() {
   };
 
   const handlePrevStation = () => {
-    const currentIndex = stations.findIndex(s => s.id === currentStation.id);
-    const prevIndex = currentIndex > 0 ? currentIndex - 1 : stations.length - 1;
-    handleTuneToStation(stations[prevIndex]);
+    const list = favoriteStationObjects.length > 0 ? favoriteStationObjects : stations;
+    if (list.length === 0) return;
+    const currentIndex = list.findIndex(s => s.id === currentStation.id);
+    const prevIndex = currentIndex > 0 ? currentIndex - 1 : list.length - 1;
+    handleTuneToStation(list[prevIndex]);
   };
 
   const handleNextStation = () => {
-    const currentIndex = stations.findIndex(s => s.id === currentStation.id);
-    const nextIndex = currentIndex < stations.length - 1 ? currentIndex + 1 : 0;
-    handleTuneToStation(stations[nextIndex]);
+    const list = favoriteStationObjects.length > 0 ? favoriteStationObjects : stations;
+    if (list.length === 0) return;
+    const currentIndex = list.findIndex(s => s.id === currentStation.id);
+    const nextIndex = currentIndex !== -1 && currentIndex < list.length - 1 ? currentIndex + 1 : 0;
+    handleTuneToStation(list[nextIndex]);
   };
 
   // Favorite toggle handler supporting both ID and full station object

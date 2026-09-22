@@ -128,14 +128,15 @@ export const CarModeView: React.FC<CarModeViewProps> = ({
           </span>
         </div>
 
-        <button
+        <motion.button
           type="button"
           onClick={onExitCarMode}
-          className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-colors backdrop-blur-md active:scale-95 shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]"
+          whileTap={{ scale: 0.95, y: 1 }}
+          className="px-5 py-2.5 rounded-full bg-gradient-to-r from-white/10 via-white/5 to-white/10 hover:from-white/20 hover:to-white/15 border border-white/25 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2.5 cursor-pointer backdrop-blur-lg shadow-[0_4px_15px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)] transition-all hover:border-[#4edea3]/60 hover:shadow-[0_4px_20px_rgba(78,222,163,0.3)]"
         >
-          <span className="material-symbols-outlined text-base">close</span>
+          <span className="material-symbols-outlined text-base text-[#4edea3]">power_settings_new</span>
           <span>Salir del Modo Coche</span>
-        </button>
+        </motion.button>
       </div>
 
       {/* Center Main Stage with LED Equalizer Circle */}
