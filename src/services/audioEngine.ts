@@ -293,16 +293,28 @@ class RadioAudioEngine {
   private sleepTimerSecondsRemaining = 0;
   private sleepTimerListeners: Array<(seconds: number) => void> = [];
 
-  public setSleepTimer(minutes: number) {
+  public setSleepTimer(minutes: number, fadeOutMinutes: number = 5) {
     this.cancelSleepTimer();
     if (minutes <= 0) return;
 
-    this.sleepTimerSecondsRemaining = minutes * 60;
+    const totalSeconds = minutes * 60;
+    const fadeOutSeconds = Math.min(totalSeconds, fadeOutMinutes * 60);
+    const fadeStartSecond = totalSeconds - fadeOutSeconds;
+
+    this.sleepTimerSecondsRemaining = totalSeconds;
     this.sleepTimerListeners.forEach(l => l(this.sleepTimerSecondsRemaining));
+
+    let fadeStarted = false;
 
     this.sleepTimerInterval = window.setInterval(() => {
       this.sleepTimerSecondsRemaining -= 1;
       this.sleepTimerListeners.forEach(l => l(this.sleepTimerSecondsRemaining));
+
+      const elapsed = totalSeconds - this.sleepTimerSecondsRemaining;
+      if (!fadeStarted && elapsed >= fadeStartSecond && fadeOutSeconds > 0) {
+        fadeStarted = true;
+        this.startFadeOut(fadeOutSeconds / 60);
+      }
 
       if (this.sleepTimerSecondsRemaining <= 0) {
         this.cancelSleepTimer();

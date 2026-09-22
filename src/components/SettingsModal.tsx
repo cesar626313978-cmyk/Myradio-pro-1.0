@@ -19,7 +19,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   alarmsCount,
 }) => {
   const [bufferSize, setBufferSize] = useState('128KB');
-  const [fadeOutMins, setFadeOutMins] = useState(5);
+  const [fadeOutMins, setFadeOutMins] = useState(() => {
+    try {
+      const saved = localStorage.getItem('radiostream_fade_mins');
+      return saved ? parseInt(saved, 10) : 5;
+    } catch {
+      return 5;
+    }
+  });
   const [synthFallback, setSynthFallback] = useState(true);
   const [lowDataMode, setLowDataMode] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
@@ -44,6 +51,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   if (!isOpen) return null;
 
   const handleSave = () => {
+    try {
+      localStorage.setItem('radiostream_fade_mins', fadeOutMins.toString());
+    } catch {
+      // ignore
+    }
     setSavedToast(true);
     setTimeout(() => {
       setSavedToast(false);
@@ -138,7 +150,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       if (item.mins === 0) {
                         audioEngine.cancelSleepTimer();
                       } else {
-                        audioEngine.setSleepTimer(item.mins);
+                        audioEngine.setSleepTimer(item.mins, fadeOutMins);
                       }
                     }}
                     className={`py-1.5 font-mono-tech text-xs font-bold border-2 border-black uppercase cursor-pointer ${

@@ -1,5 +1,6 @@
 import React from 'react';
 import { RadioStation, PlaybackStatus } from '../types/radio';
+import { motion } from 'motion/react';
 
 interface GlobalPlayerBarProps {
   currentStation: RadioStation | null;
@@ -111,23 +112,27 @@ export const GlobalPlayerBar: React.FC<GlobalPlayerBarProps> = ({
       </div>
 
       {/* Center: Playback Controls */}
-      <div className="flex items-center gap-3 md:gap-5 justify-center">
-        <button
+      <div className="flex items-center gap-3 md:gap-6 justify-center">
+        <motion.button
+          type="button"
           onClick={onPrevStation}
-          className="p-1.5 text-[#bbcabf] hover:text-white transition-colors cursor-pointer"
+          whileTap={{ scale: 0.9, y: 2 }}
+          className="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/20 text-white flex items-center justify-center cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.25)] transition-all active:shadow-[0_1px_4px_rgba(0,0,0,0.8)]"
           title="Emisora anterior"
         >
-          <span className="material-symbols-outlined text-2xl md:text-3xl">skip_previous</span>
-        </button>
+          <span className="material-symbols-outlined text-2xl md:text-3xl text-white">skip_previous</span>
+        </motion.button>
 
-        <button
+        <motion.button
+          type="button"
           onClick={onTogglePlay}
-          className={`neo-button w-12 h-12 md:w-13 md:h-13 rounded-full flex items-center justify-center transition-all ${
+          whileTap={{ scale: 0.93, y: 2 }}
+          className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-[0_8px_25px_rgba(0,0,0,0.7),inset_0_4px_8px_rgba(255,255,255,0.5),inset_0_-4px_8px_rgba(0,0,0,0.4)] ${
             playbackStatus === 'error'
-              ? 'bg-[#EF4444] text-white hover:bg-[#dc2626]'
+              ? 'bg-gradient-to-br from-[#EF4444] to-[#b91c1c] text-white border-2 border-[#7f1d1d]'
               : playbackStatus === 'buffering'
-              ? 'bg-[#F59E0B] text-black hover:bg-[#d97706]'
-              : 'bg-[#4edea3] text-[#003824] hover:bg-[#38c98e]'
+              ? 'bg-gradient-to-br from-[#F59E0B] to-[#b45309] text-black border-2 border-[#78350f]'
+              : 'bg-gradient-to-br from-[#4edea3] via-[#38c98e] to-[#059669] text-black border-2 border-[#022c22]'
           }`}
           title={
             playbackStatus === 'buffering'
@@ -140,44 +145,50 @@ export const GlobalPlayerBar: React.FC<GlobalPlayerBarProps> = ({
           }
         >
           {playbackStatus === 'buffering' ? (
-            <span className="material-symbols-outlined text-2xl animate-spin">
+            <span className="material-symbols-outlined text-3xl animate-spin">
               progress_activity
             </span>
           ) : playbackStatus === 'error' ? (
-            <span className="material-symbols-outlined text-2xl">
+            <span className="material-symbols-outlined text-3xl">
               refresh
             </span>
           ) : (
             <span
-              className="material-symbols-outlined text-3xl"
+              className="material-symbols-outlined text-3xl md:text-4xl font-black drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               {isPlaying ? 'pause' : 'play_arrow'}
             </span>
           )}
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          type="button"
           onClick={onNextStation}
-          className="p-1.5 text-[#bbcabf] hover:text-white transition-colors cursor-pointer"
+          whileTap={{ scale: 0.9, y: 2 }}
+          className="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/20 text-white flex items-center justify-center cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.25)] transition-all active:shadow-[0_1px_4px_rgba(0,0,0,0.8)]"
           title="Emisora siguiente"
         >
-          <span className="material-symbols-outlined text-2xl md:text-3xl">skip_next</span>
-        </button>
+          <span className="material-symbols-outlined text-2xl md:text-3xl text-white">skip_next</span>
+        </motion.button>
       </div>
 
       {/* Right: Volume & Expand */}
-      <div className="flex items-center justify-end gap-3 md:gap-5 w-1/3">
-        <div className="hidden sm:flex items-center gap-2">
-          <span
-            className="material-symbols-outlined text-lg text-[#bbcabf] cursor-pointer"
+      <div className="flex items-center justify-end gap-2 md:gap-4 w-1/3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
             onClick={() => onVolumeChange(volume > 0 ? 0 : 0.8)}
+            className="text-[#bbcabf] hover:text-white cursor-pointer p-1"
+            title="Silenciar / Activar"
           >
-            {volume === 0 ? 'volume_off' : volume < 0.5 ? 'volume_down' : 'volume_up'}
-          </span>
-          <div className="w-20 md:w-28 h-2 bg-black relative flex items-center border border-black">
+            <span className="material-symbols-outlined text-xl md:text-2xl">
+              {volume === 0 ? 'volume_off' : volume < 0.5 ? 'volume_down' : 'volume_up'}
+            </span>
+          </button>
+          <div className="w-28 sm:w-36 md:w-44 h-3.5 bg-black/80 relative flex items-center rounded-full border border-white/20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] overflow-hidden cursor-pointer">
             <div
-              className="absolute left-0 top-0 h-full bg-[#4edea3]"
+              className="absolute left-0 top-0 h-full bg-gradient-to-r from-[#38c98e] to-[#4edea3] rounded-full"
               style={{ width: `${volume * 100}%` }}
             />
             <input
@@ -187,7 +198,7 @@ export const GlobalPlayerBar: React.FC<GlobalPlayerBarProps> = ({
               step="0.01"
               value={volume}
               onChange={e => onVolumeChange(parseFloat(e.target.value))}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
           </div>
         </div>
