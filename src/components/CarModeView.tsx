@@ -124,7 +124,7 @@ export const CarModeView: React.FC<CarModeViewProps> = ({
         <div className="flex items-center gap-3">
           <div className="w-3 h-3 rounded-full bg-[#4edea3] animate-pulse" />
           <span className="text-xs sm:text-sm font-bold tracking-widest text-[#4edea3] uppercase">
-            MODO COCHE HUD • IGUALADOR LED
+            MODO COCHE HUD • 3D TÁCTIL
           </span>
         </div>
 
@@ -141,7 +141,7 @@ export const CarModeView: React.FC<CarModeViewProps> = ({
       {/* Center Main Stage with LED Equalizer Circle */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center max-w-4xl mx-auto w-full">
         {/* Central Station Logo Orb with Outer & Inner LED Equalizer Rings */}
-        <div className="relative mb-8">
+        <div className="relative mb-6">
           {/* Outer Pulsing LED Ring Glow */}
           <div
             className={`absolute -inset-4 rounded-full transition-all duration-300 ${
@@ -168,10 +168,10 @@ export const CarModeView: React.FC<CarModeViewProps> = ({
           )}
 
           {/* Main Circle Container with Inner LED Equalizer Bars */}
-          <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-[#4edea3] bg-black/95 flex items-center justify-center relative overflow-hidden shadow-[0_0_50px_rgba(78,222,163,0.4)]">
+          <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full border-4 border-[#4edea3] bg-black/95 flex items-center justify-center relative overflow-hidden shadow-[0_0_50px_rgba(78,222,163,0.4)]">
             {/* Inner LED Equalizer Radial Bars */}
             {isPlaying && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-45">
                 <div className="absolute w-full h-full flex items-center justify-between px-2">
                   {equalizerLevels.map((lvl, idx) => (
                     <motion.div
@@ -191,13 +191,13 @@ export const CarModeView: React.FC<CarModeViewProps> = ({
               <img
                 src={currentStation.logoUrl}
                 alt={currentStation.name}
-                className="w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover z-10 opacity-90"
+                className="w-28 h-28 sm:w-36 sm:h-36 rounded-full object-cover z-10 opacity-90"
                 onError={e => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
             ) : (
-              <span className="material-symbols-outlined text-6xl text-[#4edea3] animate-pulse z-10">
+              <span className="material-symbols-outlined text-5xl text-[#4edea3] animate-pulse z-10">
                 equalizer
               </span>
             )}
@@ -205,14 +205,14 @@ export const CarModeView: React.FC<CarModeViewProps> = ({
         </div>
 
         {/* Station Info */}
-        <div className="space-y-3 mb-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-white/5 border border-white/10 text-xs text-[#4edea3] uppercase tracking-widest font-bold">
+        <div className="space-y-2 mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 text-xs text-[#4edea3] uppercase tracking-widest font-bold">
             <span>{currentStation?.country || 'Mundial'}</span>
             <span>•</span>
             <span>{currentStation?.genre || 'Radio en Directo'}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] line-clamp-2 max-w-3xl">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] line-clamp-2 max-w-3xl">
             {currentStation?.name || 'Sintonizando emisora...'}
           </h1>
 
@@ -238,47 +238,57 @@ export const CarModeView: React.FC<CarModeViewProps> = ({
         </div>
       </div>
 
-      {/* Bottom Control Deck (Optimized for Driving) */}
-      <div className="relative z-10 px-6 py-8 bg-black/70 backdrop-blur-xl border-t border-white/15 flex flex-col items-center gap-6 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
-        {/* Main Transport Controls */}
-        <div className="flex items-center justify-center gap-8 sm:gap-12">
+      {/* Bottom 3D Cosmic Touch Control Deck */}
+      <div className="relative z-10 px-6 py-6 bg-gradient-to-t from-black via-black/90 to-black/70 backdrop-blur-2xl border-t border-white/20 flex flex-col items-center gap-6 shadow-[0_-15px_40px_rgba(0,0,0,0.9)]">
+        {/* Main Transport 3D Touch Buttons */}
+        <div className="flex items-center justify-center gap-8 sm:gap-14">
+          {/* Previous Station Button (3D Cosmic Glass) */}
           {onPrevStation && (
-            <button
+            <motion.button
               type="button"
               onClick={onPrevStation}
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 hover:bg-white/20 border-2 border-white/25 flex items-center justify-center text-white cursor-pointer active:scale-95 transition-transform shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+              whileTap={{ scale: 0.92, y: 3 }}
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-br from-white/15 via-white/5 to-white/10 border-2 border-white/30 flex items-center justify-center text-white cursor-pointer shadow-[0_10px_25px_rgba(0,0,0,0.7),inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-3px_6px_rgba(0,0,0,0.8)] transition-all hover:border-[#06B6D4]/80 active:shadow-[0_2px_10px_rgba(0,0,0,0.9),inset_0_4px_8px_rgba(0,0,0,0.9)]"
               title="Emisora Anterior"
             >
-              <span className="material-symbols-outlined text-3xl sm:text-4xl">skip_previous</span>
-            </button>
+              <span className="material-symbols-outlined text-3xl sm:text-4xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                skip_previous
+              </span>
+            </motion.button>
           )}
 
-          <button
+          {/* Play / Pause 3D Cosmic Glowing Button */}
+          <motion.button
             type="button"
             onClick={onTogglePlay}
-            className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-[#4edea3] hover:bg-[#38c98e] text-black border-4 border-black flex items-center justify-center cursor-pointer shadow-[0_0_40px_rgba(78,222,163,0.6)] active:scale-95 transition-transform"
+            whileTap={{ scale: 0.93, y: 3 }}
+            className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-[#4edea3] via-[#38c98e] to-[#059669] text-black border-4 border-[#022c22] flex items-center justify-center cursor-pointer shadow-[0_12px_35px_rgba(78,222,163,0.5),inset_0_6px_12px_rgba(255,255,255,0.6),inset_0_-6px_12px_rgba(0,0,0,0.4)] active:shadow-[0_4px_15px_rgba(78,222,163,0.7),inset_0_8px_16px_rgba(0,0,0,0.6)] transition-all"
             title={isPlaying ? 'Pausar' : 'Reproducir'}
           >
-            <span className="material-symbols-outlined text-5xl sm:text-6xl font-black">
+            <span className="material-symbols-outlined text-5xl sm:text-6xl font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
               {playbackStatus === 'buffering' ? 'progress_activity' : isPlaying ? 'pause' : 'play_arrow'}
             </span>
-          </button>
+          </motion.button>
 
+          {/* Next Station Button (3D Cosmic Glass) */}
           {onNextStation && (
-            <button
+            <motion.button
               type="button"
               onClick={onNextStation}
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 hover:bg-white/20 border-2 border-white/25 flex items-center justify-center text-white cursor-pointer active:scale-95 transition-transform shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+              whileTap={{ scale: 0.92, y: 3 }}
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-br from-white/15 via-white/5 to-white/10 border-2 border-white/30 flex items-center justify-center text-white cursor-pointer shadow-[0_10px_25px_rgba(0,0,0,0.7),inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-3px_6px_rgba(0,0,0,0.8)] transition-all hover:border-[#06B6D4]/80 active:shadow-[0_2px_10px_rgba(0,0,0,0.9),inset_0_4px_8px_rgba(0,0,0,0.9)]"
               title="Siguiente Emisora"
             >
-              <span className="material-symbols-outlined text-3xl sm:text-4xl">skip_next</span>
-            </button>
+              <span className="material-symbols-outlined text-3xl sm:text-4xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                skip_next
+              </span>
+            </motion.button>
           )}
         </div>
 
-        {/* Volume Slider */}
-        <div className="flex items-center gap-4 w-full max-w-md px-4">
-          <span className="material-symbols-outlined text-gray-400 text-xl">
+        {/* 3D Touch Volume Control Slider */}
+        <div className="flex items-center gap-5 w-full max-w-lg px-6 py-2 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)]">
+          <span className="material-symbols-outlined text-[#4edea3] text-2xl drop-shadow-[0_0_8px_rgba(78,222,163,0.5)]">
             {volume === 0 ? 'volume_off' : volume < 0.5 ? 'volume_down' : 'volume_up'}
           </span>
           <input
@@ -288,9 +298,9 @@ export const CarModeView: React.FC<CarModeViewProps> = ({
             step="0.01"
             value={volume}
             onChange={e => onVolumeChange(parseFloat(e.target.value))}
-            className="w-full h-2.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#4edea3]"
+            className="w-full h-3 bg-black/80 rounded-full appearance-none cursor-pointer accent-[#4edea3] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9),0_1px_2px_rgba(255,255,255,0.2)] border border-white/15"
           />
-          <span className="text-xs text-gray-400 font-mono w-10 text-right font-bold">
+          <span className="text-sm text-[#4edea3] font-mono font-black w-12 text-right tracking-wider">
             {Math.round(volume * 100)}%
           </span>
         </div>
