@@ -1,0 +1,6 @@
+{
+  "name": "RadioStream - Signal Zero Neo-Brutalist Radio",
+  "description": "High-performance neo-brutalist internet radio player with live streaming, alarms, sleep timer, car mode, audio telemetry, and station database.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
