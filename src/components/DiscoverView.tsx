@@ -1,11 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { RadioStation, PlaybackStatus } from '../types/radio';
-import {
-  searchRadioStations,
-  getTopVotedStations,
-  getStationsByTag,
-  getStationsByCountryCode,
-} from '../services/radioBrowserApi';
+import { INITIAL_STATIONS } from '../services/stationsData';
+import { searchRadioStations, getTopVotedStations, getStationsByTag } from '../services/radioBrowserApi';
 
 interface DiscoverViewProps {
   currentStation: RadioStation | null;
@@ -16,246 +12,262 @@ interface DiscoverViewProps {
   favorites: string[];
   onToggleFavorite: (id: string, station?: RadioStation) => void;
   initialStations?: RadioStation[];
+  onInstallPWA?: () => void;
+  isInstallable?: boolean;
 }
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Todas: '#4edea3',
+  News: '#06B6D4',
+  Pop: '#EC4899',
+  Rock: '#8B5CF6',
+  Electronic: '#84CC16',
+  '80s': '#F43F5E',
+  Jazz: '#F59E0B',
+  'Lo-Fi': '#14B8A6',
+  Latin: '#10B981',
+  Techno: '#A855F7',
+  Eclectic: '#F97316',
+  'J-Pop': '#E11D48',
+};
 
 export const DiscoverView: React.FC<DiscoverViewProps> = ({
   currentStation,
   isPlaying,
   playbackStatus = 'idle',
-  errorMessage,
   onSelectStation,
   favorites,
   onToggleFavorite,
   initialStations = [],
+  onInstallPWA,
+  isInstallable,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [stations, setStations] = useState<RadioStation[]>(initialStations);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+
+  const [stations, setStations] = useState<RadioStation[]>(
+    initialStations.length > 0 ? initialStations : INITIAL_STATIONS
+  );
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
-  const filterChips = [
-    { label: 'TOP VOTED', color: '#4edea3', value: 'top' },
-    { label: 'ESPAÑA', color: '#EF4444', countryCode: 'ES' },
-    { label: '80S', color: '#F43F5E', value: '80s' },
-    { label: 'NEWS / NOTICIAS', color: '#06B6D4', value: 'news' },
-    { label: 'JAZZ', color: '#F59E0B', value: 'jazz' },
-    { label: 'ELECTRONIC / DANCE', color: '#84CC16', value: 'electronic' },
-    { label: 'ROCK', color: '#8B5CF6', value: 'rock' },
-    { label: 'POP', color: '#EC4899', value: 'pop' },
-    { label: 'LO-FI / RELAX', color: '#14B8A6', value: 'lofi' },
-    { label: 'CLASSICAL', color: '#A855F7', value: 'classical' },
-  ];
+  const availableCategories = useMemo(() => {
+    return ['Todas', 'News', 'Pop', 'Rock', 'Electronic', '80s', 'Jazz', 'Lo-Fi', 'Latin', 'Techno', 'Eclectic', 'J-Pop'];
+  }, []);
 
-  // Perform search against open Radio Browser API
-  const performSearch = useCallback(
-    async (queryText: string, tagVal: string | null, countryCodeVal: string | null) => {
+  // Direct internet search on Radio Browser API (30,000+ stations) with 400ms debounce
+  useEffect(() => {
+    let isMounted = true;
+    const timer = setTimeout(async () => {
       setIsLoading(true);
-      setApiError(null);
+      setSearchError(null);
 
       try {
         let results: RadioStation[] = [];
+        const query = searchQuery.trim();
+        const tag = selectedCategory !== 'Todas' ? selectedCategory : '';
 
-        if (queryText.trim().length > 0) {
+        if (query) {
           results = await searchRadioStations({
-            query: queryText.trim(),
-            tag: tagVal && tagVal !== 'top' ? tagVal : undefined,
-            countrycode: countryCodeVal || undefined,
+            query,
+            tag,
             limit: 60,
           });
-        } else if (countryCodeVal) {
-          results = await getStationsByCountryCode(countryCodeVal, 60);
-        } else if (tagVal && tagVal !== 'top') {
-          results = await getStationsByTag(tagVal, 60);
+        } else if (tag) {
+          results = await getStationsByTag(tag, 60);
         } else {
           results = await getTopVotedStations(60);
         }
 
-        if (results.length > 0) {
+        if (!isMounted) return;
+
+        if (results && results.length > 0) {
           setStations(results);
-        } else if (queryText.trim().length > 0) {
-          setStations([]);
-        } else if (initialStations.length > 0) {
-          setStations(initialStations);
+        } else if (query) {
+          // Fallback to local filter if online search yields nothing
+          const base = initialStations.length > 0 ? initialStations : INITIAL_STATIONS;
+          const fallback = base.filter(
+            st =>
+              st.name.toLowerCase().includes(query.toLowerCase()) ||
+              st.genre.toLowerCase().includes(query.toLowerCase()) ||
+              st.country.toLowerCase().includes(query.toLowerCase())
+          );
+          setStations(fallback);
+          if (fallback.length === 0) {
+            setSearchError(`No se encontraron emisoras en directo para "${query}".`);
+          }
+        } else {
+          setStations(initialStations.length > 0 ? initialStations : INITIAL_STATIONS);
         }
       } catch (err) {
-        console.error('Radio Browser query error:', err);
-        setApiError('No se pudo conectar a Radio Browser API. Mostrando emisoras guardadas.');
-        if (initialStations.length > 0) setStations(initialStations);
+        console.error('Error fetching online stations:', err);
+        if (isMounted) {
+          const base = initialStations.length > 0 ? initialStations : INITIAL_STATIONS;
+          setStations(base);
+          setSearchError('Catálogo local activo (sin conexión con Radio Browser).');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    },
-    [initialStations]
-  );
-
-  // Initial load
-  useEffect(() => {
-    performSearch('', 'top', null);
-  }, [performSearch]);
-
-  // Debounced typing handler
-  useEffect(() => {
-    if (!searchQuery.trim()) return;
-    const timer = setTimeout(() => {
-      performSearch(searchQuery, selectedTag, selectedCountry);
     }, 400);
-    return () => clearTimeout(timer);
-  }, [searchQuery, selectedTag, selectedCountry, performSearch]);
 
-  const handleSelectTag = (tag: string) => {
-    if (selectedTag === tag) {
-      setSelectedTag(null);
-      performSearch(searchQuery, null, selectedCountry);
-    } else {
-      setSelectedTag(tag);
-      setSelectedCountry(null);
-      performSearch(searchQuery, tag, null);
-    }
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, selectedCategory, initialStations]);
+
+  // Prioritize user favorites at the top of the search/browse results
+  const sortedStations = useMemo(() => {
+    const list = [...stations];
+    list.sort((a, b) => {
+      const aIsFav = favorites.includes(a.id) ? 1 : 0;
+      const bIsFav = favorites.includes(b.id) ? 1 : 0;
+      if (aIsFav !== bIsFav) {
+        return bIsFav - aIsFav; // Favorites first
+      }
+      return 0; // maintain vote/relevance order
+    });
+    return list;
+  }, [stations, favorites]);
+
+  const handleSelectCategory = (cat: string) => {
+    setSelectedCategory(cat);
   };
 
-  const handleSelectCountry = (code: string) => {
-    if (selectedCountry === code) {
-      setSelectedCountry(null);
-      performSearch(searchQuery, selectedTag, null);
-    } else {
-      setSelectedCountry(code);
-      setSelectedTag(null);
-      performSearch(searchQuery, null, code);
-    }
-  };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    performSearch(searchQuery, selectedTag, selectedCountry);
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('Todas');
+    setSearchError(null);
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full">
-      {/* Title & Description */}
-      <div>
-        <div className="flex items-center gap-3">
-          <h1 className="font-black text-3xl md:text-5xl text-white uppercase tracking-tighter font-['Inter']">
-            DESCUBRIR EMISORAS
-          </h1>
-          <span className="bg-[#4edea3] text-[#003824] text-xs font-black font-mono-tech px-2.5 py-1 border-2 border-black">
-            30.000+ EN VIVO
+    <div className="flex flex-col gap-2.5 sm:gap-3.5 max-w-7xl mx-auto w-full">
+      {/* Minimalist PWA Top Bar: Ultra-compact, zero wasted vertical space */}
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#4edea3] animate-pulse" />
+          <h2 className="font-mono-tech text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+            Emisoras en Vivo (30.000+ Online)
+          </h2>
+          <span className="text-[10px] font-mono-tech px-1.5 py-0.5 bg-[#1A1A1A] border border-black text-[#4edea3] font-bold">
+            {sortedStations.length}
           </span>
         </div>
-        <p className="font-mono-tech text-xs md:text-sm text-[#bbcabf] mt-1">
-          Buscador conectado a la base de datos abierta de radio mundial.
-        </p>
+
+        {/* In-App PWA Install Trigger */}
+        {isInstallable && onInstallPWA && (
+          <button
+            type="button"
+            onClick={onInstallPWA}
+            className="neo-button bg-[#4edea3] hover:bg-[#38c98e] text-[#003824] px-2.5 py-1 text-[10px] font-mono-tech font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1 cursor-pointer active:scale-95 transition-transform"
+            title="Instalar Myradio en la pantalla de inicio"
+          >
+            <span className="material-symbols-outlined text-xs">download</span>
+            <span>Instalar PWA</span>
+          </button>
+        )}
       </div>
 
-      {/* Search Input Bar */}
-      <form onSubmit={handleFormSubmit} className="relative flex items-center w-full">
-        <div className="relative flex-1">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#bbcabf] text-2xl pointer-events-none">
-            search
-          </span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Buscar emisora por nombre, dial o frecuencia (ej. Cope, Cadena SER, RockFM, BBC)..."
-            className="w-full bg-[#1A1A1A] border-3 border-black text-white pl-12 pr-10 py-3.5 font-mono-tech text-xs sm:text-sm placeholder:text-[#86948a] focus:outline-none focus:border-[#4edea3] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery('');
-                performSearch('', selectedTag, selectedCountry);
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#bbcabf] hover:text-white p-1 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-lg">close</span>
-            </button>
-          )}
-        </div>
-        <button
-          type="submit"
-          className="neo-button ml-2 sm:ml-3 bg-[#4edea3] hover:bg-[#38c98e] text-[#003824] px-4 sm:px-6 py-3.5 font-mono-tech font-black text-xs sm:text-sm uppercase border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] cursor-pointer shrink-0"
-        >
-          Buscar
-        </button>
-      </form>
+      {/* Streamlined Direct Internet Search Input */}
+      <div className="relative flex items-center w-full">
+        <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#bbcabf] text-xl pointer-events-none">
+          search
+        </span>
+        <input
+          id="realtime-station-search-input"
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Busca cualquier emisora o país en internet (ej. SER, Ibiza, Jazz, Madrid)..."
+          className="w-full bg-[#1A1A1A] border-2 border-black text-white pl-10 pr-9 py-2.5 font-mono-tech text-xs sm:text-sm placeholder:text-[#86948a] focus:outline-none focus:border-[#4edea3] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-colors"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#bbcabf] hover:text-white p-1 cursor-pointer transition-colors"
+            title="Borrar búsqueda"
+          >
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        )}
+      </div>
 
-      {/* Filter Quick Chips */}
-      <div className="flex flex-wrap gap-2">
-        {filterChips.map(chip => {
-          const isSelected = chip.countryCode
-            ? selectedCountry === chip.countryCode
-            : selectedTag === chip.value;
+      {/* Horizontal Scrollable Category Chips */}
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1 touch-pan-x">
+        {availableCategories.map(cat => {
+          const isSelected = selectedCategory === cat;
+          const dotColor = CATEGORY_COLORS[cat] || '#8B5CF6';
 
           return (
             <button
-              key={chip.label}
-              onClick={() => {
-                if (chip.countryCode) {
-                  handleSelectCountry(chip.countryCode);
-                } else if (chip.value) {
-                  handleSelectTag(chip.value);
-                }
-              }}
-              className={`neo-button px-3 py-1.5 font-mono-tech text-xs font-bold uppercase transition-all border-2 border-black flex items-center gap-1.5 cursor-pointer ${
+              key={cat}
+              type="button"
+              onClick={() => handleSelectCategory(cat)}
+              className={`neo-button px-2.5 py-1 font-mono-tech text-[11px] font-bold uppercase transition-all border border-black flex items-center gap-1.5 cursor-pointer shrink-0 ${
                 isSelected
-                  ? 'bg-white text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
-                  : 'bg-[#201f1f] text-[#e5e2e1] hover:bg-[#353534] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                  ? 'bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] -translate-y-0.5'
+                  : 'bg-[#1A1A1A] text-[#e5e2e1] hover:bg-[#282828] shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]'
               }`}
             >
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: chip.color }} />
-              {chip.label}
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: dotColor }}
+              />
+              <span>{cat}</span>
             </button>
           );
         })}
       </div>
 
-      {/* API Notice / Error */}
-      {apiError && (
-        <div className="bg-[#EF4444]/20 border-2 border-[#EF4444] p-3 text-xs font-mono-tech text-white flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#EF4444]">error</span>
-          <span>{apiError}</span>
+      {/* Search Error Notice */}
+      {searchError && (
+        <div className="bg-[#EF4444]/20 border border-[#EF4444] p-2 text-xs font-mono-tech text-white flex items-center gap-2">
+          <span className="material-symbols-outlined text-[#EF4444] text-base">info</span>
+          <span>{searchError}</span>
         </div>
       )}
 
       {/* Stations Grid */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-[#1A1A1A] border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          <span className="material-symbols-outlined text-4xl text-[#4edea3] animate-spin mb-3">
+        <div className="flex flex-col items-center justify-center py-16 bg-[#1A1A1A] border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+          <span className="material-symbols-outlined text-3xl text-[#4edea3] animate-spin mb-2">
             sync
           </span>
           <p className="font-mono-tech text-xs text-[#bbcabf] uppercase tracking-wider">
-            Sintonizando catálogo global...
+            Buscando en la red mundial (30.000+ emisoras)...
           </p>
         </div>
-      ) : stations.length === 0 ? (
-        <div className="p-12 text-center bg-[#1A1A1A] border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          <span className="material-symbols-outlined text-5xl text-[#86948a] mb-2">
+      ) : sortedStations.length === 0 ? (
+        /* Empty State */
+        <div className="p-6 sm:p-8 text-center bg-[#1A1A1A] border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center">
+          <span className="material-symbols-outlined text-4xl text-[#86948a] mb-1">
             search_off
           </span>
-          <h3 className="font-black text-lg text-white uppercase">
-            No se encontraron emisoras para &quot;{searchQuery}&quot;
+          <h3 className="font-bold text-sm sm:text-base text-white uppercase">
+            Sin resultados
           </h3>
-          <p className="font-mono-tech text-xs text-[#bbcabf] mt-1">
-            Prueba a buscar con otro término o selecciona una de las etiquetas sugeridas.
+          <p className="font-mono-tech text-xs text-[#bbcabf] mt-1 max-w-xs">
+            No se encontraron emisoras en internet para {searchQuery ? `"${searchQuery}"` : selectedCategory}
           </p>
-          <button
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedTag('top');
-              setSelectedCountry(null);
-              performSearch('', 'top', null);
-            }}
-            className="neo-button mt-4 bg-[#4edea3] text-[#003824] px-4 py-2 font-mono-tech text-xs font-black uppercase border-2 border-black"
-          >
-            Restablecer Filtros
-          </button>
+
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="neo-button bg-[#4edea3] text-[#003824] px-3 py-1.5 font-mono-tech text-[11px] font-black uppercase border border-black cursor-pointer"
+            >
+              Restablecer filtros
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {stations.map(station => {
+        /* Station Cards Grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {sortedStations.map(station => {
             const isCurrent = currentStation?.id === station.id;
             const isFav = favorites.includes(station.id);
 
@@ -263,41 +275,49 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
               <div
                 key={station.id}
                 onClick={() => onSelectStation(station)}
-                className={`p-4 flex flex-col justify-between border-3 border-black transition-all cursor-pointer group relative ${
+                className={`p-3 sm:p-3.5 flex flex-col justify-between border-2 border-black transition-all cursor-pointer group relative active:scale-[0.99] ${
                   isCurrent
-                    ? 'bg-[#201f1f] shadow-[4px_4px_0px_0px_rgba(78,222,163,0.8)] border-[#4edea3]'
-                    : 'bg-[#1A1A1A] hover:bg-[#252525] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
+                    ? 'bg-[#201f1f] shadow-[3px_3px_0px_0px_rgba(78,222,163,0.8)] border-[#4edea3]'
+                    : isFav
+                    ? 'bg-[#1e2321] hover:bg-[#252525] shadow-[3px_3px_0px_0px_rgba(239,68,68,0.4)] border-[#EF4444]/60'
+                    : 'bg-[#1A1A1A] hover:bg-[#252525] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
                 }`}
               >
-                {/* Top Status Header inside card */}
-                <div className="flex justify-between items-center text-xs font-mono-tech mb-2">
+                {/* Status Bar inside card */}
+                <div className="flex justify-between items-center text-xs font-mono-tech mb-1.5">
                   <div className="flex items-center gap-1.5">
                     {isCurrent ? (
                       playbackStatus === 'buffering' ? (
-                        <span className="inline-flex items-center gap-1 text-[#F59E0B] font-black uppercase text-[10px]">
-                          <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-ping" />
+                        <span className="inline-flex items-center gap-1 text-[#F59E0B] font-bold uppercase text-[9px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-ping" />
                           Conectando...
                         </span>
                       ) : playbackStatus === 'error' ? (
-                        <span className="inline-flex items-center gap-1 text-[#EF4444] font-black uppercase text-[10px]">
-                          <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
+                        <span className="inline-flex items-center gap-1 text-[#EF4444] font-bold uppercase text-[9px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
                           No disponible
                         </span>
                       ) : isPlaying ? (
-                        <span className="inline-flex items-center gap-1 text-[#4edea3] font-black uppercase text-[10px]">
-                          <span className="w-2 h-2 rounded-full bg-[#4edea3] animate-pulse" />
+                        <span className="inline-flex items-center gap-1 text-[#4edea3] font-bold uppercase text-[9px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse" />
                           En Directo
                         </span>
                       ) : (
-                        <span className="text-[#bbcabf] text-[10px] font-bold">PAUSADA</span>
+                        <span className="text-[#bbcabf] text-[9px] font-bold">PAUSADA</span>
                       )
+                    ) : isFav ? (
+                      <span className="inline-flex items-center gap-1 text-[#EF4444] font-bold uppercase text-[9px]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
+                        Favorita ★
+                      </span>
                     ) : (
-                      <span className="text-[#bbcabf] text-[10px] uppercase font-bold">
-                        {station.countryCode || 'WORLD'}
+                      <span className="text-[#bbcabf] text-[9px] uppercase font-bold">
+                        {station.countryCode || 'RADIO'}
                       </span>
                     )}
                   </div>
 
+                  {/* Favorite Button */}
                   <button
                     type="button"
                     onClick={e => {
@@ -308,7 +328,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                     title={isFav ? 'Quitar de favoritas' : 'Añadir a favoritas'}
                   >
                     <span
-                      className={`material-symbols-outlined text-lg ${
+                      className={`material-symbols-outlined text-base ${
                         isFav ? 'text-[#EF4444]' : 'text-[#86948a]'
                       }`}
                       style={isFav ? { fontVariationSettings: "'FILL' 1" } : {}}
@@ -319,9 +339,9 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                 </div>
 
                 {/* Station Art & Name */}
-                <div className="flex items-center gap-3 my-1">
+                <div className="flex items-center gap-2.5 my-0.5">
                   <div
-                    className="w-13 h-13 border-2 border-black flex items-center justify-center shrink-0 overflow-hidden relative"
+                    className="w-10 h-10 border border-black flex items-center justify-center shrink-0 overflow-hidden relative"
                     style={{ backgroundColor: station.color || '#201f1f' }}
                   >
                     {station.logoUrl ? (
@@ -334,24 +354,30 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                         }}
                       />
                     ) : (
-                      <span className="material-symbols-outlined text-white text-2xl">
+                      <span className="material-symbols-outlined text-white text-xl">
                         radio
                       </span>
                     )}
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-mono-tech text-sm font-black text-white truncate group-hover:text-[#4edea3]">
+                    <h3 className="font-mono-tech text-xs sm:text-sm font-bold text-white truncate group-hover:text-[#4edea3]">
                       {station.name}
                     </h3>
-                    <p className="text-xs text-[#bbcabf] truncate font-['Inter'] mt-0.5">
-                      {station.country} • {station.genre}
+                    <p className="text-[11px] text-[#bbcabf] truncate font-['Inter'] mt-0.5">
+                      {station.country} •{' '}
+                      <span
+                        className="font-bold"
+                        style={{ color: CATEGORY_COLORS[station.genre] || '#4edea3' }}
+                      >
+                        {station.genre}
+                      </span>
                     </p>
                   </div>
                 </div>
 
                 {/* Bottom Bar: Format, Bitrate, Play Action */}
-                <div className="flex items-center justify-between mt-3 pt-2 border-t border-black/80">
+                <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-black/60">
                   <div className="flex items-center gap-1 font-mono-tech text-[9px] text-[#bbcabf]">
                     <span className="bg-black px-1.5 py-0.5 text-[#06B6D4] font-bold">
                       {station.format}
@@ -369,7 +395,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                       e.stopPropagation();
                       onSelectStation(station);
                     }}
-                    className={`neo-button px-3 py-1 font-mono-tech text-[10px] font-black uppercase border-2 border-black flex items-center gap-1 cursor-pointer ${
+                    className={`neo-button px-2.5 py-1 font-mono-tech text-[9px] font-black uppercase border border-black flex items-center gap-1 cursor-pointer ${
                       isCurrent && isPlaying
                         ? 'bg-[#201f1f] text-white'
                         : isCurrent && playbackStatus === 'error'
@@ -394,7 +420,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                     ) : isCurrent && isPlaying ? (
                       <>
                         <span className="material-symbols-outlined text-xs">pause</span>
-                        <span>PAUSAR</span>
+                        <span>PAUSA</span>
                       </>
                     ) : (
                       <>

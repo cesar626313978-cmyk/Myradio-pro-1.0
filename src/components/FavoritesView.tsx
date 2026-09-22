@@ -22,27 +22,28 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
   onNavigateToDiscover,
 }) => {
   return (
-    <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full">
-      {/* Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-2.5 sm:gap-3.5 max-w-7xl mx-auto w-full">
+      {/* Page Header (Minimalist & Compact) */}
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <div className="flex items-center gap-2">
           <span
-            className="material-symbols-outlined text-[#EF4444] text-3xl md:text-4xl"
+            className="material-symbols-outlined text-[#EF4444] text-lg"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
             favorite
           </span>
-          <h1 className="font-black text-2xl md:text-4xl text-white uppercase tracking-tighter font-['Inter']">
+          <h2 className="font-mono-tech text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
             Mis Favoritas
-          </h1>
+          </h2>
+          <span className="text-[10px] font-mono-tech px-1.5 py-0.5 bg-[#1A1A1A] border border-black text-[#4edea3] font-bold">
+            {favoriteStations.length}
+          </span>
         </div>
 
         {/* Sync Status Badge */}
-        <div className="flex items-center gap-2 bg-[#201f1f] px-3 py-1.5 border-2 border-black">
-          <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-          <span className="font-mono-tech text-xs font-bold text-[#4edea3] tracking-wider">
-            FIREBASE SYNCED
-          </span>
+        <div className="flex items-center gap-1.5 bg-[#1A1A1A] px-2 py-0.5 border border-black text-[10px] font-mono-tech text-[#4edea3] font-bold">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+          <span>Sincronizado</span>
         </div>
       </div>
 

@@ -5,8 +5,6 @@ import { TabType } from '../types/radio';
 interface TopAppBarProps {
   currentTab: TabType;
   onSelectTab: (tab: TabType) => void;
-  onToggleCarMode: () => void;
-  isCarMode: boolean;
   onOpenSettings: () => void;
   lang: 'ES' | 'EN';
   onToggleLang: () => void;
@@ -19,8 +17,6 @@ interface TopAppBarProps {
 export const TopAppBar: React.FC<TopAppBarProps> = ({
   currentTab,
   onSelectTab,
-  onToggleCarMode,
-  isCarMode,
   onOpenSettings,
   user,
   onLoginWithGoogle,
@@ -31,11 +27,8 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
 
   const navTabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'descubrir', label: 'Descubrir', icon: 'search' },
-    { id: 'generos', label: 'Géneros', icon: 'category' },
-    { id: 'paises', label: 'Países', icon: 'public' },
     { id: 'favoritas', label: 'Favoritas', icon: 'favorite' },
-    { id: 'alarmas', label: 'Alarmas', icon: 'alarm' },
-    { id: 'historial', label: 'Historial', icon: 'analytics' },
+    { id: 'coche', label: 'Modo Coche', icon: 'directions_car' },
   ];
 
   return (
@@ -82,22 +75,8 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
           })}
         </nav>
 
-        {/* Actions Zone: Car Mode + Settings + Google Auth (User Login/Logout) */}
+        {/* Actions Zone: Settings + Google Auth (User Login/Logout) */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Car Mode Quick Toggle */}
-          <button
-            onClick={onToggleCarMode}
-            className={`neo-button px-3 py-1.5 font-mono-tech text-xs font-extrabold uppercase flex items-center gap-1.5 whitespace-nowrap ${
-              isCarMode
-                ? 'bg-[#06B6D4] text-black'
-                : 'bg-[#201f1f] text-white hover:bg-[#353534]'
-            }`}
-            title="Modo Coche para conducción"
-          >
-            <span className="material-symbols-outlined text-base">directions_car</span>
-            <span className="hidden sm:inline">Modo Coche</span>
-          </button>
-
           {/* User Auth Profile (Firebase + Gmail) */}
           {user ? (
             <div className="relative">
@@ -142,7 +121,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
                     </div>
                     <div className="mt-1 font-mono-tech text-[9px] text-[#10B981] bg-black/40 px-2 py-0.5 border border-black flex items-center gap-1">
                       <span className="material-symbols-outlined text-xs">cloud_done</span>
-                      Favoritas y alarmas sincronizadas
+                      Favoritas sincronizadas
                     </div>
                   </div>
 

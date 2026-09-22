@@ -48,4 +48,4 @@ export interface TelemetryStats {
   currentLatency: number;
 }
 
-export type TabType = 'descubrir' | 'generos' | 'paises' | 'favoritas' | 'alarmas' | 'historial';
+export type TabType = 'descubrir' | 'favoritas' | 'coche';

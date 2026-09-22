@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { audioEngine } from '../services/audioEngine';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -22,6 +23,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [synthFallback, setSynthFallback] = useState(true);
   const [lowDataMode, setLowDataMode] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
+
+  const [sleepSecondsLeft, setSleepSecondsLeft] = useState(() => audioEngine.getSleepTimerSeconds());
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const unsubscribe = audioEngine.onSleepTimerChange(secs => {
+      setSleepSecondsLeft(secs);
+    });
+    return unsubscribe;
+  }, [isOpen]);
+
+  const formatTimeLeft = (secs: number) => {
+    if (secs <= 0) return '';
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   if (!isOpen) return null;
 
@@ -81,6 +99,68 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Sleep Timer (Temporizador de Apagado) */}
+          <div className="bg-[#131313] p-3.5 border-2 border-black flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#4edea3] text-base">bedtime</span>
+                <span className="font-mono-tech text-xs text-white font-bold uppercase">
+                  Temporizador de Apagado (Sleep Timer)
+                </span>
+              </div>
+              {sleepSecondsLeft > 0 && (
+                <span className="font-mono-tech text-xs text-[#4edea3] font-bold animate-pulse">
+                  Apagando en {formatTimeLeft(sleepSecondsLeft)}
+                </span>
+              )}
+            </div>
+            <p className="font-mono-tech text-[10px] text-[#bbcabf]">
+              Detiene la reproducción de audio automáticamente tras el tiempo seleccionado (audioEngine.stop).
+            </p>
+            <div className="grid grid-cols-5 gap-1.5 mt-1">
+              {[
+                { label: 'Off', mins: 0 },
+                { label: '15m', mins: 15 },
+                { label: '30m', mins: 30 },
+                { label: '45m', mins: 45 },
+                { label: '60m', mins: 60 },
+              ].map(item => {
+                const isActive =
+                  (item.mins === 0 && sleepSecondsLeft === 0) ||
+                  (item.mins > 0 && Math.abs(sleepSecondsLeft - item.mins * 60) < 60);
+                return (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => {
+                      if (item.mins === 0) {
+                        audioEngine.cancelSleepTimer();
+                      } else {
+                        audioEngine.setSleepTimer(item.mins);
+                      }
+                    }}
+                    className={`py-1.5 font-mono-tech text-xs font-bold border-2 border-black uppercase cursor-pointer ${
+                      isActive
+                        ? 'bg-[#4edea3] text-[#003824] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                        : 'bg-[#201f1f] text-white hover:bg-[#353534]'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+            {sleepSecondsLeft > 0 && (
+              <button
+                type="button"
+                onClick={() => audioEngine.cancelSleepTimer()}
+                className="mt-1 bg-[#EF4444]/20 border border-[#EF4444] text-[#EF4444] hover:bg-[#EF4444]/30 py-1 font-mono-tech text-[10px] font-bold uppercase cursor-pointer"
+              >
+                Cancelar Temporizador Activo
+              </button>
+            )}
           </div>
 
           {/* Fade Out Duration */}

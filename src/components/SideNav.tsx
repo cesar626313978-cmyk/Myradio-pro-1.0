@@ -5,22 +5,18 @@ interface SideNavProps {
   currentTab: TabType;
   onSelectTab: (tab: TabType) => void;
   favoritesCount: number;
-  alarmsCount: number;
+  alarmsCount?: number;
 }
 
 export const SideNav: React.FC<SideNavProps> = ({
   currentTab,
   onSelectTab,
   favoritesCount,
-  alarmsCount,
 }) => {
   const navItems: { id: TabType; label: string; icon: string; badge?: number }[] = [
-    { id: 'historial', label: 'Dashboard', icon: 'dashboard' },
-    { id: 'descubrir', label: 'Global Search', icon: 'search' },
-    { id: 'generos', label: 'Géneros', icon: 'music_note' },
-    { id: 'paises', label: 'Países', icon: 'public' },
+    { id: 'descubrir', label: 'Buscador', icon: 'search' },
     { id: 'favoritas', label: 'Favoritas', icon: 'favorite', badge: favoritesCount },
-    { id: 'alarmas', label: 'Alarmas & Sleep', icon: 'alarm', badge: alarmsCount },
+    { id: 'coche', label: 'Modo Coche', icon: 'directions_car' },
   ];
 
   return (

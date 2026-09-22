@@ -8,12 +8,9 @@ interface BottomNavBarProps {
 
 export const BottomNavBar: React.FC<BottomNavBarProps> = ({ currentTab, onSelectTab }) => {
   const tabs: { id: TabType; label: string; icon: string }[] = [
-    { id: 'descubrir', label: 'Descubrir', icon: 'show_chart' },
-    { id: 'generos', label: 'Géneros', icon: 'music_note' },
-    { id: 'paises', label: 'Países', icon: 'public' },
+    { id: 'descubrir', label: 'Buscador', icon: 'search' },
     { id: 'favoritas', label: 'Favoritas', icon: 'favorite' },
-    { id: 'alarmas', label: 'Alarmas', icon: 'alarm' },
-    { id: 'historial', label: 'Historial', icon: 'history' },
+    { id: 'coche', label: 'Coche', icon: 'directions_car' },
   ];
 
   return (

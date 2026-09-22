@@ -259,6 +259,78 @@ class RadioAudioEngine {
     this.analyser.getByteFrequencyData(dataArray);
     return dataArray;
   }
+
+  public updateMediaMetadata(station: { name: string; genre?: string; logoUrl?: string; country?: string }) {
+    if ('mediaSession' in navigator && window.MediaMetadata) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: station.name,
+        artist: station.genre ? `${station.genre} • En Directo` : 'En Directo',
+        album: station.country || 'Myradio PWA',
+        artwork: [
+          { src: station.logoUrl || '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+        ],
+      });
+
+      try {
+        navigator.mediaSession.setActionHandler('play', () => {
+          this.resume();
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          this.pause();
+        });
+        navigator.mediaSession.setActionHandler('stop', () => {
+          this.stop();
+        });
+      } catch {
+        // Some browser engines might not support all actions
+      }
+    }
+  }
+
+  // Sleep Timer functionality
+  private sleepTimerInterval: number | null = null;
+  private sleepTimerSecondsRemaining = 0;
+  private sleepTimerListeners: Array<(seconds: number) => void> = [];
+
+  public setSleepTimer(minutes: number) {
+    this.cancelSleepTimer();
+    if (minutes <= 0) return;
+
+    this.sleepTimerSecondsRemaining = minutes * 60;
+    this.sleepTimerListeners.forEach(l => l(this.sleepTimerSecondsRemaining));
+
+    this.sleepTimerInterval = window.setInterval(() => {
+      this.sleepTimerSecondsRemaining -= 1;
+      this.sleepTimerListeners.forEach(l => l(this.sleepTimerSecondsRemaining));
+
+      if (this.sleepTimerSecondsRemaining <= 0) {
+        this.cancelSleepTimer();
+        this.stop();
+      }
+    }, 1000);
+  }
+
+  public cancelSleepTimer() {
+    if (this.sleepTimerInterval !== null) {
+      clearInterval(this.sleepTimerInterval);
+      this.sleepTimerInterval = null;
+    }
+    this.sleepTimerSecondsRemaining = 0;
+    this.sleepTimerListeners.forEach(l => l(0));
+  }
+
+  public getSleepTimerSeconds(): number {
+    return this.sleepTimerSecondsRemaining;
+  }
+
+  public onSleepTimerChange(callback: (seconds: number) => void): () => void {
+    this.sleepTimerListeners.push(callback);
+    callback(this.sleepTimerSecondsRemaining);
+    return () => {
+      this.sleepTimerListeners = this.sleepTimerListeners.filter(cb => cb !== callback);
+    };
+  }
 }
 
 export const audioEngine = new RadioAudioEngine();

@@ -11,7 +11,6 @@ interface GlobalPlayerBarProps {
   onNextStation: () => void;
   volume: number;
   onVolumeChange: (vol: number) => void;
-  onOpenCarMode: () => void;
   isFavorite: boolean;
   onToggleFavorite: (id: string, station?: RadioStation) => void;
 }
@@ -26,7 +25,6 @@ export const GlobalPlayerBar: React.FC<GlobalPlayerBarProps> = ({
   onNextStation,
   volume,
   onVolumeChange,
-  onOpenCarMode,
   isFavorite,
   onToggleFavorite,
 }) => {
@@ -37,10 +35,8 @@ export const GlobalPlayerBar: React.FC<GlobalPlayerBarProps> = ({
       {/* Left: Station Info & Live Status */}
       <div className="flex items-center gap-3 w-1/3 min-w-0">
         <div
-          onClick={onOpenCarMode}
-          className="w-12 h-12 bg-[#201f1f] border-2 border-black flex items-center justify-center shrink-0 cursor-pointer relative group overflow-hidden"
+          className="w-12 h-12 bg-[#201f1f] border-2 border-black flex items-center justify-center shrink-0 relative overflow-hidden"
           style={{ backgroundColor: currentStation.color || '#201f1f' }}
-          title="Abrir en Modo Coche"
         >
           <span className="material-symbols-outlined text-white text-2xl group-hover:scale-110 transition-transform">
             radio
@@ -58,10 +54,7 @@ export const GlobalPlayerBar: React.FC<GlobalPlayerBarProps> = ({
 
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <div className="flex items-center gap-2">
-            <h4
-              onClick={onOpenCarMode}
-              className="font-bold text-sm md:text-base text-white truncate cursor-pointer hover:text-[#4edea3]"
-            >
+            <h4 className="font-bold text-sm md:text-base text-white truncate">
               {currentStation.name}
             </h4>
             <button
@@ -198,15 +191,6 @@ export const GlobalPlayerBar: React.FC<GlobalPlayerBarProps> = ({
             />
           </div>
         </div>
-
-        <button
-          onClick={onOpenCarMode}
-          className="neo-button bg-[#201f1f] text-white p-2 border-2 border-black flex items-center gap-1 font-mono-tech text-xs font-bold hover:bg-[#353534] cursor-pointer"
-          title="Expandir Modo Coche"
-        >
-          <span className="material-symbols-outlined text-base">fullscreen</span>
-          <span className="hidden lg:inline">COCHE</span>
-        </button>
       </div>
     </div>
   );
