@@ -150,12 +150,21 @@ export const CarModeView: React.FC<CarModeViewProps> = ({
             }`}
           />
 
-          {/* Outer Rotating LED Segment Ring */}
+          {/* Outer Rotating Beam of Light Ring that changes color with music */}
           {isPlaying && (
             <motion.div
-              className="absolute -inset-6 rounded-full border-2 border-dashed border-[#4edea3]/60 pointer-events-none"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+              className="absolute -inset-6 rounded-full border-2 border-transparent bg-gradient-to-r from-[#4edea3] via-[#06B6D4] via-[#8B5CF6] to-[#ec4899] pointer-events-none opacity-80 blur-[1px]"
+              style={{ maskImage: 'linear-gradient(transparent, black)' }}
+              animate={{
+                rotate: 360,
+                filter: [
+                  'hue-rotate(0deg) drop-shadow(0 0 10px rgba(78,222,163,0.6))',
+                  'hue-rotate(120deg) drop-shadow(0 0 15px rgba(6,182,212,0.8))',
+                  'hue-rotate(240deg) drop-shadow(0 0 12px rgba(236,72,153,0.7))',
+                  'hue-rotate(360deg) drop-shadow(0 0 10px rgba(78,222,163,0.6))',
+                ],
+              }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
           )}
 
